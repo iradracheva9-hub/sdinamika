@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Админка</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+        .section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .q-block { border-bottom: 1px solid #eee; padding: 10px 0; margin-bottom: 10px; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { cursor: pointer; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; }
+        .save-btn { background: #007bff; color: white; width: 100%; padding: 15px; margin-top: 20px; }
+        .add-btn { background: #28a745; color: white; }
+        .del-btn { background: #dc3545; color: white; float: right; font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+    <div class="section">
+        <h3>Дизайн и Ссылка</h3>
+        Фон: <input type="color" id="bg-color"> 
+        Кнопки: <input type="color" id="btn-color"> 
+        Текст: <input type="color" id="text-color">
+        <br><br>
+        Текст кнопки: <input type="text" id="cta-text">
+        Ссылка: <input type="text" id="cta-link">
+    </div>
+
+    <div class="section">
+        <h3>Вопросы</h3>
+        <div id="questions-list"></div>
+        <button class="add-btn" onclick="addQuestion()">+ Добавить вопрос</button>
+    </div>
+
+    <button class="save-btn" onclick="saveAll()">СОХРАНИТЬ ВСЁ</button>
+
+<script>
+    const STORAGE_KEY = 'spiral_quiz_data';
+    let config = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { styles: { bg: '#f4f4f9', btn: '#6200ea', text: '#333333' }, questions: [] };
+
+    function init() {
+        document.getElementById('bg-color').value = config.styles.bg;
+        document.getElementById('btn-color').value = config.styles.btn;
+        document.getElementById('text-color').value = config.styles.text;
+        document.getElementById('cta-text').value = config.ctaText || "";
+        document.getElementById('cta-link').value = config.ctaLink || "";
+        config.questions.forEach(q => renderQuestionUI(q));
+    }
+
+    function renderQuestionUI(qData = {}) {
+        const div = document.createElement('div');
+        div.className = 'q-block';
+        div.innerHTML = `
+            <button class="del-btn" onclick="this.parentElement.remove()">Удалить</button>
+            <b>Вопрос:</b> <input type="text" class="q-title" value="${qData.title || ''}">
+            А: <input type="text" class="ans-a" value="${qData.A || ''}" placeholder="Бежевый">
+            Б: <input type="text" class="ans-b" value="${qData.B || ''}" placeholder="Фиолетовый">
+            В: <input type="text" class="ans-v" value="${qData.V || ''}" placeholder="Красный">
+            Г: <input type="text" class="ans-g" value="${qData.G || ''}" placeholder="Синий">
+            Д: <input type="text" class="ans-d" value="${qData.D || ''}" placeholder="Оранжевый">
+        `;
+        document.getElementById('questions-list').appendChild(div);
+    }
+
+    function addQuestion() { renderQuestionUI(); }
+
+    function saveAll() {
+        const questions = Array.from(document.querySelectorAll('.q-block')).map(b => ({
+            title: b.querySelector('.q-title').value,
+            A: b.querySelector('.ans-a').value,
+            B: b.querySelector('.ans-b').value,
+            V: b.querySelector('.ans-v').value,
+            G: b.querySelector('.ans-g').value,
+            D: b.querySelector('.ans-d').value
+        }));
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            styles: { bg: document.getElementById('bg-color').value, btn: document.getElementById('btn-color').value, text: document.getElementById('text-color').value },
+            ctaText: document.getElementById('cta-text').value,
+            ctaLink: document.getElementById('cta-link').value,
+            questions
+        }));
+        alert('Сохранено!');
+    }
+    init();
+</script>
+</body>
+</html>
