@@ -2,84 +2,83 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Админка</title>
+    <title>Админ-панель Квиза</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
-        .section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .q-block { border-bottom: 1px solid #eee; padding: 10px 0; margin-bottom: 10px; }
-        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { cursor: pointer; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; }
-        .save-btn { background: #007bff; color: white; width: 100%; padding: 15px; margin-top: 20px; }
-        .add-btn { background: #28a745; color: white; }
-        .del-btn { background: #dc3545; color: white; float: right; font-size: 0.7rem; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; line-height: 1.5; }
+        .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .q-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        input { width: 100%; padding: 10px; margin: 5px 0 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .row { display: flex; gap: 10px; margin-bottom: 5px; align-items: center; }
+        .label-key { width: 30px; font-weight: bold; color: #6200ea; }
+        button { cursor: pointer; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        .save-btn { background: #007bff; color: white; width: 100%; font-size: 1.1rem; }
+        .add-btn { background: #28a745; color: white; margin-bottom: 20px; }
+        .del-btn { background: #ff4d4d; color: white; font-size: 0.8rem; padding: 5px 10px; }
     </style>
 </head>
 <body>
-    <div class="section">
-        <h3>Дизайн и Ссылка</h3>
-        Фон: <input type="color" id="bg-color"> 
-        Кнопки: <input type="color" id="btn-color"> 
-        Текст: <input type="color" id="text-color">
+    <h1>Настройка Квиза</h1>
+
+    <div class="card">
+        <h3>1. Внешний вид и Ссылка</h3>
+        Фон: <input type="color" id="bg-color" value="#f4f4f9" style="width: 60px; height: 40px;"> 
+        Кнопки: <input type="color" id="btn-color" value="#6200ea" style="width: 60px; height: 40px;">
         <br><br>
-        Текст кнопки: <input type="text" id="cta-text">
-        Ссылка: <input type="text" id="cta-link">
+        Текст на кнопке: <input type="text" id="cta-text" placeholder="Например: Получить стратегию">
+        Ссылка воронки: <input type="text" id="cta-link" placeholder="https://t.me/your_bot">
     </div>
 
-    <div class="section">
-        <h3>Вопросы</h3>
-        <div id="questions-list"></div>
-        <button class="add-btn" onclick="addQuestion()">+ Добавить вопрос</button>
+    <div class="card">
+        <h3>2. Ваши вопросы</h3>
+        <div id="questions-container"></div>
+        <button class="add-btn" onclick="addQuestionUI()">+ Добавить вопрос</button>
     </div>
 
-    <button class="save-btn" onclick="saveAll()">СОХРАНИТЬ ВСЁ</button>
+    <button class="save-btn" onclick="saveData()">СОХРАНИТЬ ВСЁ</button>
 
 <script>
     const STORAGE_KEY = 'spiral_quiz_data';
-    let config = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { styles: { bg: '#f4f4f9', btn: '#6200ea', text: '#333333' }, questions: [] };
+    let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { styles: { bg: '#f4f4f9', btn: '#6200ea', text: '#333' }, questions: [], ctaText: '', ctaLink: '' };
 
     function init() {
-        document.getElementById('bg-color').value = config.styles.bg;
-        document.getElementById('btn-color').value = config.styles.btn;
-        document.getElementById('text-color').value = config.styles.text;
-        document.getElementById('cta-text').value = config.ctaText || "";
-        document.getElementById('cta-link').value = config.ctaLink || "";
-        config.questions.forEach(q => renderQuestionUI(q));
+        document.getElementById('bg-color').value = data.styles.bg;
+        document.getElementById('btn-color').value = data.styles.btn;
+        document.getElementById('cta-text').value = data.ctaText || "";
+        document.getElementById('cta-link').value = data.ctaLink || "";
+        data.questions.forEach(q => addQuestionUI(q));
     }
 
-    function renderQuestionUI(qData = {}) {
+    function addQuestionUI(q = {}) {
         const div = document.createElement('div');
-        div.className = 'q-block';
+        div.className = 'q-item';
         div.innerHTML = `
-            <button class="del-btn" onclick="this.parentElement.remove()">Удалить</button>
-            <b>Вопрос:</b> <input type="text" class="q-title" value="${qData.title || ''}">
-            А: <input type="text" class="ans-a" value="${qData.A || ''}" placeholder="Бежевый">
-            Б: <input type="text" class="ans-b" value="${qData.B || ''}" placeholder="Фиолетовый">
-            В: <input type="text" class="ans-v" value="${qData.V || ''}" placeholder="Красный">
-            Г: <input type="text" class="ans-g" value="${qData.G || ''}" placeholder="Синий">
-            Д: <input type="text" class="ans-d" value="${qData.D || ''}" placeholder="Оранжевый">
+            <button class="del-btn" onclick="this.parentElement.remove()" style="float:right">Удалить</button>
+            <b>Вопрос:</b> <input type="text" class="q-title" value="${q.title || ''}">
+            <div class="row"><span class="label-key">А:</span> <input type="text" class="ans-a" value="${q.A || ''}" placeholder="Бежевый"></div>
+            <div class="row"><span class="label-key">Б:</span> <input type="text" class="ans-b" value="${q.B || ''}" placeholder="Фиолетовый"></div>
+            <div class="row"><span class="label-key">В:</span> <input type="text" class="ans-v" value="${q.V || ''}" placeholder="Красный"></div>
+            <div class="row"><span class="label-key">Г:</span> <input type="text" class="ans-g" value="${q.G || ''}" placeholder="Синий"></div>
+            <div class="row"><span class="label-key">Д:</span> <input type="text" class="ans-d" value="${q.D || ''}" placeholder="Оранжевый"></div>
         `;
-        document.getElementById('questions-list').appendChild(div);
+        document.getElementById('questions-container').appendChild(div);
     }
 
-    function addQuestion() { renderQuestionUI(); }
-
-    function saveAll() {
-        const questions = Array.from(document.querySelectorAll('.q-block')).map(b => ({
+    function saveData() {
+        const qBlocks = document.querySelectorAll('.q-item');
+        const questions = Array.from(qBlocks).map(b => ({
             title: b.querySelector('.q-title').value,
-            A: b.querySelector('.ans-a').value,
-            B: b.querySelector('.ans-b').value,
-            V: b.querySelector('.ans-v').value,
-            G: b.querySelector('.ans-g').value,
+            A: b.querySelector('.ans-a').value, B: b.querySelector('.ans-b').value,
+            V: b.querySelector('.ans-v').value, G: b.querySelector('.ans-g').value,
             D: b.querySelector('.ans-d').value
         }));
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            styles: { bg: document.getElementById('bg-color').value, btn: document.getElementById('btn-color').value, text: document.getElementById('text-color').value },
+            styles: { bg: document.getElementById('bg-color').value, btn: document.getElementById('btn-color').value, text: '#333' },
             ctaText: document.getElementById('cta-text').value,
             ctaLink: document.getElementById('cta-link').value,
             questions
         }));
-        alert('Сохранено!');
+        alert('Настройки сохранены!');
     }
     init();
 </script>
